@@ -13,7 +13,7 @@ Viewing.Extension.HideElement = function (viewer, options) {
     var _showIcon = 'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyBpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBXaW5kb3dzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjNFRUM0MkE3NzBFNTExRTVBMEU1RjNCNjkwNjMxQUQ2IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjNFRUM0MkE4NzBFNTExRTVBMEU1RjNCNjkwNjMxQUQ2Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6M0VFQzQyQTU3MEU1MTFFNUEwRTVGM0I2OTA2MzFBRDYiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6M0VFQzQyQTY3MEU1MTFFNUEwRTVGM0I2OTA2MzFBRDYiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7l4Z5VAAABgklEQVR42uxX7W3EIAxNboEyAiOwwWWEjJARrhtkg4xAN2g3SDfgboKMkG5AHcmVLMvYUFW6H42lpzuBgedPSJ9z7p4pl+7JchI4CbQSmAARkACZYQesgBkQqnc8ytCAA8yAPbfJChis/XujDwxosWfjX4A7/j4AV6LP5Q3wirpNHpgEqyIgGN6a0HoqCeClNaWNFsGdviJcFCML2y6Rr7F8Vqwdcb4Ua4/WU084jUBgh08N4UmF8DhGYi0ROBQ3orgori3Jxi0ke9Nw3CQCS4klw2aUX8lrA8sHTwl4NukUApbMytqZ6L0fYxdS1z916oS6/yt5If8fvA/ctGwlSL8MwSh5Wds8VsRSqgRpTWBJOJbK0DPFqFizCV3SVRwerUY0Cht3imWDEi5+uNmISo0m1dxswg2arbyyLqNduBMmw+JFWFdMasuSoGT9joRW4fbLFR21igD1xtb4IIk1N2jf+GES8NFxxYblcOwT5+/YYD6KDxAm/flldBL49wS+BRgAV/Tg0yTDzLIAAAAASUVORK5CYII=';
 
     var _self = this;
-    var _hiddenElements = [];
+    var _lastElement = null;
     
     _self.load = function () {
 
@@ -24,28 +24,39 @@ Viewing.Extension.HideElement = function (viewer, options) {
         hideButton.icon.style.backgroundImage = "url('data:image/png;base64,"+_hideIcon+"')";
         hideButton.setToolTip("Hide element");
 
+        viewer.addEventListener(
+            Autodesk.Viewing.SELECTION_CHANGED_EVENT,
+            function(event) {
+                if ( event.dbIdArray.length > 0 ) {
+                    _lastElement = event.dbIdArray[0];
+                }
+            }
+        );
+
         /**
          * Hide selected element
          */
         hideButton.onClick = function () {
-            _hiddenElements = viewer.getSelection();
-            viewer.hide(_hiddenElements);
+            if (_lastElement !== null) {
+                viewer.hide(_lastElement);
+            } else {
+                console.log("Nothing selected");
+            }
         };
 
         var showButton = new Autodesk.Viewing.UI.Button("lmvdbg_viewer_tb_button_11");
         showButton.icon.style.backgroundImage = "url('data:image/png;base64,"+_showIcon+"')";
-        showButton.setToolTip("Show all hidden elements");
+        showButton.setToolTip("Show last hidden element");
 
         /**
          * Show hidden elements in viewer
          */
         showButton.onClick = function () {
 
-            for(var index in _hiddenElements) {
-                viewer.show(_hiddenElements[index]);
+            if (_lastElement !== null) {
+                viewer.show(_lastElement);
+                _lastElement = null;
             }
-            _hiddenElements = [];
-            viewer.clearSelection();
         };
 
         _mainViewerSubToolbar.addControl(hideButton);
